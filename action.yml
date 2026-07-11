@@ -1,0 +1,27 @@
+name: "Claude Issue Triage"
+description: "Classifies, summarizes, and labels newly opened GitHub issues using Claude."
+inputs:
+  anthropic-api-key:
+    description: "Anthropic API key used to call Claude."
+    required: true
+  github-token:
+    description: "GitHub token with 'issues: write' permission, used to comment and label."
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install -e "${{ github.action_path }}"
+
+    - name: Run triage
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: python "${{ github.action_path }}/triage_agent/main.py"

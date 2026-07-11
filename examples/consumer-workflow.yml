@@ -1,0 +1,18 @@
+# Copy this file into a target repo at .github/workflows/triage.yml
+name: Triage new issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ShubhamChhimpa/claude-issue-triage-agent@main
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

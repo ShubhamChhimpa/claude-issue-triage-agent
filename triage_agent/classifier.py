@@ -78,5 +78,12 @@ def classify_issue(
         messages=[{"role": "user", "content": user_message}],
     )
 
-    raw_text = response.content[0].text if response.content else ""
+    raw_text = _extract_text(response.content)
     return _parse_response(raw_text, allowed_labels)
+
+
+def _extract_text(content_blocks) -> str:
+    for block in content_blocks:
+        if getattr(block, "type", None) == "text":
+            return block.text
+    return ""

@@ -5,12 +5,38 @@ from triage_agent.classifier import TriageResult, classify_issue
 from triage_agent.prompts import build_user_message
 
 
-def _make_client(response_text: str) -> MagicMock:
+def _make_client(response_text: str, with_thinking_block: bool = False) -> MagicMock:
     client = MagicMock()
     content_block = MagicMock()
+    content_block.type = "text"
     content_block.text = response_text
-    client.messages.create.return_value = MagicMock(content=[content_block])
+
+    content = [content_block]
+    if with_thinking_block:
+        thinking_block = MagicMock(spec=["type", "thinking"])
+        thinking_block.type = "thinking"
+        thinking_block.thinking = "reasoning about the issue..."
+        content = [thinking_block, content_block]
+
+    client.messages.create.return_value = MagicMock(content=content)
     return client
+
+
+def test_classify_issue_skips_leading_thinking_block():
+    payload = {
+        "summary": "Login button does nothing on Safari.",
+        "type": "bug",
+        "priority": "high",
+        "labels": ["bug"],
+    }
+    client = _make_client(json.dumps(payload), with_thinking_block=True)
+
+    result = classify_issue(
+        title="t", body="b", allowed_labels=["bug"], client=client
+    )
+
+    assert result.type == "bug"
+    assert result.labels == ["bug"]
 
 
 def test_classify_issue_happy_path():

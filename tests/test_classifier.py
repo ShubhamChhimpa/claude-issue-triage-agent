@@ -118,3 +118,29 @@ def test_build_user_message_handles_empty_body():
 
     assert "(no description provided)" in message
     assert "(none available)" in message
+
+
+def test_build_user_message_uses_pull_request_wording_for_that_kind():
+    message = build_user_message("A PR title", "A PR body", ["bug"], kind="pull_request")
+
+    assert "Pull request title: A PR title" in message
+    assert "Pull request body:" in message
+    assert "Kind: pull_request" in message
+
+
+def test_classify_issue_passes_kind_through_to_prompt():
+    payload = {
+        "summary": "Fixes the login bug.",
+        "type": "bug",
+        "priority": "medium",
+        "labels": ["bug"],
+    }
+    client = _make_client(json.dumps(payload))
+
+    classify_issue(
+        title="Fix login", body="b", allowed_labels=["bug"], client=client, kind="pull_request"
+    )
+
+    _, kwargs = client.messages.create.call_args
+    user_message = kwargs["messages"][0]["content"]
+    assert "Kind: pull_request" in user_message

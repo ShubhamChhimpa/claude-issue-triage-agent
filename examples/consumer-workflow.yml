@@ -1,12 +1,15 @@
 # Copy this file into a target repo at .github/workflows/triage.yml
-name: Triage new issues
+name: Triage new issues and PRs
 
 on:
   issues:
     types: [opened]
+  pull_request:
+    types: [opened]
 
 permissions:
   issues: write
+  pull-requests: write
 
 jobs:
   triage:

@@ -25,24 +25,30 @@ def _build_comment(result: TriageResult) -> str:
 
 
 def run(event: dict, repo_full_name: str, github_token: str) -> str | None:
-    """Triage the issue in `event`. Returns a status message, or None if skipped."""
-    if event.get("action") != "opened" or "issue" not in event:
+    """Triage the issue/PR in `event`. Returns a status message, or None if skipped."""
+    if event.get("action") != "opened":
+        return None
+
+    if "pull_request" in event:
+        kind, noun, item = "pull_request", "PR", event["pull_request"]
+    elif "issue" in event:
+        kind, noun, item = "issue", "issue", event["issue"]
+    else:
         return None
 
     owner, repo = repo_full_name.split("/", 1)
-    issue = event["issue"]
-    issue_number = issue["number"]
-    title = issue.get("title", "")
-    body = issue.get("body") or ""
+    item_number = item["number"]
+    title = item.get("title", "")
+    body = item.get("body") or ""
 
     allowed_labels = get_repo_labels(owner, repo, github_token)
-    result = classify_issue(title, body, allowed_labels)
+    result = classify_issue(title, body, allowed_labels, kind=kind)
 
-    post_comment(owner, repo, issue_number, _build_comment(result), github_token)
-    add_labels(owner, repo, issue_number, result.labels, github_token)
+    post_comment(owner, repo, item_number, _build_comment(result), github_token)
+    add_labels(owner, repo, item_number, result.labels, github_token)
 
     return (
-        f"Triaged issue #{issue_number}: type={result.type} "
+        f"Triaged {noun} #{item_number}: type={result.type} "
         f"priority={result.priority} labels={result.labels}"
     )
 
@@ -53,7 +59,7 @@ def main() -> int:
     github_token = os.environ["GITHUB_TOKEN"]
 
     status = run(event, repo_full_name, github_token)
-    print(status or "Not a newly opened issue event; nothing to do.")
+    print(status or "Not a newly opened issue/PR event; nothing to do.")
     return 0
 
 

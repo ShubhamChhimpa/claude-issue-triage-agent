@@ -67,9 +67,10 @@ def classify_issue(
     body: str,
     allowed_labels: list[str],
     client: anthropic.Anthropic | None = None,
+    kind: str = "issue",
 ) -> TriageResult:
     client = client or _get_client()
-    user_message = build_user_message(title, body, allowed_labels)
+    user_message = build_user_message(title, body, allowed_labels, kind=kind)
 
     response = client.messages.create(
         model=DEFAULT_MODEL,
